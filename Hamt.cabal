@@ -1,0 +1,13 @@
+Name:   Hamt
+Version:  0.1.0
+Cabal-Version:  >= 1.2
+License:  BSD3
+Author:  Jason Baker
+Category:  Data Structures
+Synopsis:  A hash array-mapped trie for Haskell
+build-type:  Simple
+
+Library
+    Build-Depends:      base>=4, hashable, array
+    Exposed-modules:
+        Data.Hamt
