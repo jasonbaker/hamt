@@ -1,13 +1,8 @@
 {-# OPTIONS_GHC -XGADTs #-}
 module Data.Hamt where
-import Control.Monad
-import Control.Monad.ST
 import Data.Bits
 import Data.Array
-import Data.Array.MArray
-import Data.Array.ST
 import Data.Hashable
-import Data.STRef
 
 data Hamt a b = KeyValue a b
                   | TrieMap (Array Int (Hamt a b))
@@ -46,8 +41,3 @@ insertPairs tn pairs = foldl insertPair tn pairs
 hamt :: Hashable a => [(a, b)] -> Hamt a b
 hamt [] = Empty
 hamt pairs = insertPairs newRoot pairs
-
-newRootArray :: Array Int Int
-newRootArray = runSTArray $ do
-                 newarray <- newArray (0, 31) 0 :: ST s (STArray s Int Int)
-                 ; return newarray
