@@ -1,8 +1,9 @@
-{-# OPTIONS_GHC -XGADTs #-}
 module Data.Hamt (empty, insert, find, hamt, (Data.Hamt.!), Hamt(..), findWithDefault) where
 import Data.Hamt.Array
 import Data.Hamt.Bits
+import Data.Hamt.List
 import Data.Hamt.Types
+import Data.List (lookup)
 import Data.Array
 import Data.Hashable
 import Data.Word 
@@ -10,16 +11,33 @@ import Data.Word
 empty :: Hamt a b
 empty = Empty
 
+wordHash :: Hashable a => a -> Word
+wordHash key = fromIntegral $ hash key
+
 insertWithMask :: (Hashable a, Eq a) => Hamt a b -> a -> Word -> b -> Int -> Hamt a b
 insertWithMask Empty key _ value _ = KeyValue key value
 insertWithMask (KeyValue oldkey oldvalue) newkey hashvalue newvalue bitseries = 
-    let oldsubkey = hashBits oldkey bitseries
-    -- Convert this node into an equivalent TrieMap and try again.  This requires
-    -- an extra copy, but elegantly handles the case where the two values have the
-    -- same subkey.
-    in insertWithMask
-                (TrieMap (newArrayWith [(oldsubkey, KeyValue oldkey oldvalue)]))
-                newkey hashvalue newvalue bitseries
+    if newkey == oldkey then
+        KeyValue newkey newvalue
+    else if hashvalue == (wordHash oldkey) then
+             -- There was a collision.  Create a bucket to store these in.
+             KeyValueBucket hashvalue [(oldkey, oldvalue), (newkey, newvalue)]
+    else
+        let oldsubkey = hashBits oldkey bitseries
+        -- Convert this node into an equivalent TrieMap and try again.  This requires
+        -- an extra copy, but elegantly handles the case where the two values have the
+        -- same subkey.
+        in insertWithMask
+                    (TrieMap (newArrayWith [(oldsubkey, KeyValue oldkey oldvalue)]))
+                    newkey hashvalue newvalue bitseries
+insertWithMask (KeyValueBucket buckethashvalue assoclist) key hashvalue value bitseries =
+    if hashvalue == buckethashvalue then
+        KeyValueBucket buckethashvalue (update key value assoclist)
+    else
+        let oldsubkey = getSubkey buckethashvalue bitseries
+        in insertWithMask
+           (TrieMap (newArrayWith [(oldsubkey, KeyValueBucket buckethashvalue assoclist)]))
+           key hashvalue value bitseries
 insertWithMask (TrieMap arr) key hashvalue value bitseries =
     let subkey = getSubkey hashvalue bitseries
     in TrieMap (arr // [(subkey, insertWithMask 
@@ -38,6 +56,8 @@ findWithMask (KeyValue k v) key _ _ = if k == key then
 findWithMask (TrieMap arr) key hashvalue bitseries = 
     let subkey = getSubkey (fromIntegral hashvalue) bitseries
     in findWithMask ((Data.Array.!) arr subkey) key hashvalue (bitseries+1)
+findWithMask (KeyValueBucket _ assoclist) key hashvalue bitseries =
+    lookup key assoclist
 
 -- | Find a value in the hash trie
 find :: (Hashable a, Eq a) 
