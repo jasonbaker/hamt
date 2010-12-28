@@ -24,9 +24,9 @@ findWithMask (KeyValue k v) key _ _ = if k == key then
                                         Just v
                                     else
                                         Nothing
-findWithMask (TrieMap array) key hashvalue bitseries = 
+findWithMask (TrieMap arr) key hashvalue bitseries = 
     let subkey = getSubkey (fromIntegral hashvalue) bitseries
-    in findWithMask ((Data.Array.!) array subkey) key hashvalue (bitseries+1)
+    in findWithMask ((Data.Array.!) arr subkey) key hashvalue (bitseries+1)
 
 find :: (Hashable a, Eq a) => Hamt a b -> a -> Maybe b
 find tn key = findWithMask tn key (hash key) 1 
