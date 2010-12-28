@@ -94,7 +94,7 @@ insertPair tn (key, value) = insert tn key value
 insertPairs :: (Eq a, Hashable a) => Hamt a b -> [(a, b)] -> Hamt a b
 insertPairs tn pairs = foldl insertPair tn pairs
 
--- | Create a hash trie, built from a list of 
+-- | Create a hash trie, built from an association list.
 hamt :: (Eq a, Hashable a) => [(a, b)] -> Hamt a b
 hamt [] = Empty
 hamt pairs = insertPairs Empty pairs
