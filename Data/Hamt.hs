@@ -1,13 +1,11 @@
 {-# OPTIONS_GHC -XGADTs #-}
-module Data.Hamt (empty, insert, find, hamt, (Data.Hamt.!), Hamt(..)) where
+module Data.Hamt (empty, insert, find, hamt, (Data.Hamt.!), Hamt(..), findWithDefault) where
 import Data.Hamt.Array
 import Data.Hamt.Bits
-import Data.Hamt.Debug
 import Data.Hamt.Types
 import Data.Array
 import Data.Hashable
 import Data.Word 
-import Debug.Trace
 
 empty :: Hamt a b
 empty = Empty
@@ -31,7 +29,7 @@ insertWithMask (TrieMap arr) key hashvalue value bitseries =
                                    value 
                                    (bitseries + 1))])
                  
-findWithMask :: (Hashable a, Eq a, Show b) => Hamt a b -> a -> Word -> Int -> Maybe b
+findWithMask :: (Hashable a, Eq a) => Hamt a b -> a -> Word -> Int -> Maybe b
 findWithMask Empty _ _ _ =  Nothing
 findWithMask (KeyValue k v) key _ _ = if k == key then
                                         Just v
@@ -42,11 +40,21 @@ findWithMask (TrieMap arr) key hashvalue bitseries =
     in findWithMask ((Data.Array.!) arr subkey) key hashvalue (bitseries+1)
 
 -- | Find a value in the hash trie
-find :: (Hashable a, Eq a, Show b) 
+find :: (Hashable a, Eq a) 
         => Hamt a b -- ^ The hash trie to search
         -> a        -- ^ The key
         -> Maybe b  -- ^ The value (if it exists)
 find tn key = findWithMask tn key (fromIntegral $ hash key) 1 
+
+-- | Find a value in the hash trie returning a given default if it is not found.
+findWithDefault :: (Hashable a, Eq a) 
+                   => Hamt a b -- ^ The hash trie
+                   -> a        -- ^ The key to search for
+                   -> b        -- ^ The default value
+                   -> b        -- ^ The found value
+findWithDefault trie key def = case find trie key of
+                                 Just val -> val
+                                 Nothing -> def
 
 (!) :: (Hashable a, Eq a, Show b) => Hamt a b -> a -> Maybe b
 (!) tn key = find tn key
@@ -65,7 +73,7 @@ insertPair tn (key, value) = insert tn key value
 insertPairs :: (Eq a, Hashable a) => Hamt a b -> [(a, b)] -> Hamt a b
 insertPairs tn pairs = foldl insertPair tn pairs
 
--- | Create a hash trie
+-- | Create a hash trie, built from a list of 
 hamt :: (Eq a, Hashable a) => [(a, b)] -> Hamt a b
 hamt [] = Empty
 hamt pairs = insertPairs Empty pairs

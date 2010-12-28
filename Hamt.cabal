@@ -11,3 +11,5 @@ Library
     Build-Depends:      base>=4, hashable, array
     Exposed-modules:
         Data.Hamt
+    Other-modules:
+        Data.Hamt.Types, Data.Hamt.Bits, Data.Hamt.Array, Data.Hamt.Debug
