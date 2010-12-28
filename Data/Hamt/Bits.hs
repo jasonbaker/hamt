@@ -22,10 +22,10 @@ mask 6 = 0x0000007c
 mask 7 = 0x00000003
 
 hashBits :: Hashable a => a -> Int -> Word 
-hashBits key bitseries = getSubkey (fromIntegral $ hash key) bitseries
+hashBits key bitseries = getSubkey ({-# SCC "Hash" #-} fromIntegral $ hash key) bitseries
 
 getSubkey :: Word -> Int -> Word
-getSubkey key bitseries = (key `shiftR`  (32 -(bitseries * 5))) .&. 0x01f
+getSubkey key bitseries = {-# SCC "GetSubkey" #-} (key `shiftR`  (32 -(bitseries * 5))) .&. 0x01f
 
 setBits :: [Int] -> Int
 setBits bitlist = foldl setBit 0 bitlist

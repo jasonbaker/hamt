@@ -8,7 +8,7 @@ Synopsis:  A hash array-mapped trie for Haskell
 build-type:  Simple
 
 Library
-    Build-Depends:      base>=4, hashable, array
+    Build-Depends:      base>=4, hashable, array, diffarray
     Exposed-modules:
         Data.Hamt
     Other-modules:

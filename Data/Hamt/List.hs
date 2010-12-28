@@ -1,7 +1,7 @@
 module Data.Hamt.List (update) where
 
 update :: Eq a => a -> b -> [(a, b)] -> [(a, b)]
-update key value list = update' key value list []
+update key value list = {-# SCC "UpdatingAssocList" #-} update' key value list []
 
 update' :: Eq a => a -> b -> [(a, b)] -> [(a, b)] -> [(a, b)]
 update' key value ((k, v):assocs) accum = 

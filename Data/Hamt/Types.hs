@@ -1,10 +1,10 @@
 module Data.Hamt.Types where
-import Data.Array
+import Data.Array.Diff
 import Data.Word
 
 data Hamt a b = KeyValue a b
               | KeyValueBucket Word [(a, b)]
-              | TrieMap (Array Word (Hamt a b)) 
+              | TrieMap (DiffArray Word (Hamt a b)) 
               | Empty
                 deriving (Show)
 
