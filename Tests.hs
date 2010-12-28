@@ -18,11 +18,16 @@ test_key_value_find_nothing = TestCase (assertEqual
                                         (find (KeyValue "asdf" 1) "jkl;") Nothing)
 
 test_find_in_single_level_trie = TestCase(assertEqual
-                                          "Find a key in a single level trie"
+                                          "Find a key ('asdf') in a single level trie"
                                           (find (hamt [("asdf", 1), ("jkl;", 2)]) "asdf") (Just 1))
 
+test_find_other_in_single_level_trie = TestCase(assertEqual
+                                          "Find a key ('jkl;') in a single level trie"
+                                          (find (hamt [("asdf", 1), ("jkl;", 2)]) "jkl;") (Just 2))
+
+
 tests = TestList [test_insert, test_empty_find, test_key_value_find_nothing,
-                 test_find_in_single_level_trie]
+                 test_find_in_single_level_trie, test_find_other_in_single_level_trie]
 
 main = runTestTT tests
 
