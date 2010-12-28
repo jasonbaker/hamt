@@ -2,7 +2,6 @@
 module Data.Hamt where
 import Data.Hamt.Array
 import Data.Hamt.Bits
-import Data.Hamt.Debug
 import Data.Hamt.Types
 import Data.Array
 import Data.Hashable
