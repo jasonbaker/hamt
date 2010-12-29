@@ -4,8 +4,7 @@ import Data.Hamt.Bits
 import Data.Hamt.List
 import Data.Hamt.Types
 import Data.List (lookup)
-import Data.Array.Diff
-import Data.Array.IArray
+import Data.Array
 import Data.Hashable
 import Data.Word 
 
@@ -42,7 +41,7 @@ insertWithMask (KeyValueBucket buckethashvalue assoclist) key hashvalue value bi
 insertWithMask (TrieMap arr) key hashvalue value bitseries =
     let subkey = getSubkey hashvalue bitseries
     in {-# SCC "UpdateTrieMap" #-} TrieMap (arr // [(subkey, insertWithMask 
-                                   ((Data.Array.IArray.!) arr subkey) 
+                                   ((Data.Array.!) arr subkey) 
                                    key 
                                    hashvalue 
                                    value 
@@ -56,7 +55,7 @@ findWithMask (KeyValue k v) key _ _ = {-# SCC "FindOnKeyValue" #-} if k == key t
                                         Nothing
 findWithMask (TrieMap arr) key hashvalue bitseries = 
     let subkey = getSubkey (fromIntegral hashvalue) bitseries
-    in {-# SCC "FindOnTrieMap" #-} findWithMask ((Data.Array.IArray.!) arr subkey) key hashvalue (bitseries+1)
+    in {-# SCC "FindOnTrieMap" #-} findWithMask ((Data.Array.!) arr subkey) key hashvalue (bitseries+1)
 findWithMask (KeyValueBucket _ assoclist) key hashvalue bitseries =
     {-# SCC "FindOnKeyValueBucket" #-} lookup key assoclist
 
