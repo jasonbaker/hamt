@@ -26,7 +26,7 @@ insertWithMask (KeyValue oldkey oldvalue) newkey hashvalue newvalue bitseries =
         let oldsubkey = hashBits oldkey bitseries
         -- Convert this node into an equivalent TrieMap and try again.  This requires
         -- an extra copy, but elegantly handles the case where the two values have the
-        -- same subkey.
+        -- same subkey.  Somewhat naive, but elegant and effective.
         in {-# SCC "AllocateNewTrieMap" #-} insertWithMask
                     (TrieMap (newArrayWith [(oldsubkey, KeyValue oldkey oldvalue)]))
                     newkey hashvalue newvalue bitseries
@@ -35,6 +35,7 @@ insertWithMask (KeyValueBucket buckethashvalue assoclist) key hashvalue value bi
         {-# SCC "UpdatingKeyValueBucket" #-}KeyValueBucket buckethashvalue (update key value assoclist)
     else
         let oldsubkey = getSubkey buckethashvalue bitseries
+        -- Again, somewhat naive, but elegant and effective.
         in {-# SCC "AllocateNewTrieMap" #-} insertWithMask
            (TrieMap (newArrayWith [(oldsubkey, KeyValueBucket buckethashvalue assoclist)]))
            key hashvalue value bitseries
