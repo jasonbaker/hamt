@@ -18,10 +18,10 @@ insertWithMask :: (Hashable a, Eq a) => Hamt a b -> a -> Word -> b -> Int -> Ham
 insertWithMask Empty key _ value _ = {-# SCC "InsertKeyValue" #-} KeyValue key value
 insertWithMask (KeyValue oldkey oldvalue) newkey hashvalue newvalue bitseries = 
     if newkey == oldkey then
-        {-# SCC "InsertKeyValue" #-} KeyValue newkey newvalue
+        KeyValue newkey newvalue
     else if hashvalue == (wordHash oldkey) then
              -- There was a collision.  Create a bucket to store these in.
-             {-# SCC "InsertKeyValueBucket" #-} KeyValueBucket hashvalue [(oldkey, oldvalue), (newkey, newvalue)]
+             KeyValueBucket hashvalue [(oldkey, oldvalue), (newkey, newvalue)]
     else
         let oldsubkey = hashBits oldkey bitseries
         -- Convert this node into an equivalent TrieMap and try again.  This requires
@@ -36,7 +36,7 @@ insertWithMask (KeyValueBucket buckethashvalue assoclist) key hashvalue value bi
     else
         let oldsubkey = getSubkey buckethashvalue bitseries
         -- Again, somewhat naive, but elegant and effective.
-        in {-# SCC "AllocateNewTrieMap" #-} insertWithMask
+        in insertWithMask
            (TrieMap (newArrayWith [(oldsubkey, KeyValueBucket buckethashvalue assoclist)]))
            key hashvalue value bitseries
 insertWithMask (TrieMap arr) key hashvalue value bitseries =
