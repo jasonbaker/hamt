@@ -112,6 +112,8 @@ deleteWithMask (KeyValueBucket subkey pairs) delkey _ _ =
     -- still leaving the KeyValueBucket here instead of returning Empty.
     KeyValueBucket subkey (filter (\(key, value) -> key /= delkey) pairs)
 deleteWithMask (TrieMap arr) delkey hash bitseries =
+    -- Again, possibly minor issue, but if this leaves an empty TrieMap, return
+    -- it instead of Empty.
     let subkey = getSubkey hash bitseries in
     TrieMap (arr // [(subkey, deleteWithMask ((Data.Array.!) arr subkey) delkey hash (bitseries+1))]) 
 
