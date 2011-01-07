@@ -6,5 +6,5 @@ data Hamt a b = KeyValue a b
               | KeyValueBucket Word [(a, b)]
               | TrieMap (Array Word (Hamt a b)) 
               | Empty
-                deriving (Show)
+                deriving (Show, Eq)
 

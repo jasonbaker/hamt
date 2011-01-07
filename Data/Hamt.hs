@@ -1,4 +1,11 @@
-module Data.Hamt (empty, insert, find, hamt, (Data.Hamt.!), Hamt(..), findWithDefault) where
+module Data.Hamt (empty,
+                  insert,
+                  find,
+                  hamt,
+                  (Data.Hamt.!),
+                  Hamt(..), 
+                  findWithDefault, 
+                  delete) where
 import Data.Hamt.Array
 import Data.Hamt.Bits
 import Data.Hamt.List
@@ -62,39 +69,58 @@ findWithMask (KeyValueBucket _ assoclist) key hashvalue bitseries =
 
 -- | Find a value in the hash trie
 find :: (Hashable a, Eq a) 
-        => Hamt a b -- ^ The hash trie to search
-        -> a        -- ^ The key
+        => a        -- ^ The key
+        -> Hamt a b -- ^ The hash trie to search
         -> Maybe b  -- ^ The value (if it exists)
-find tn key = {-# SCC "Find" #-} findWithMask tn key (fromIntegral $ hash key) 1 
+find key tn = {-# SCC "Find" #-} findWithMask tn key (fromIntegral $ hash key) 1 
 
 -- | Find a value in the hash trie returning a given default if it is not found.
 findWithDefault :: (Hashable a, Eq a) 
-                   => Hamt a b -- ^ The hash trie
-                   -> a        -- ^ The key to search for
+                   => a        -- ^ The key to search for
                    -> b        -- ^ The default value
+                   -> Hamt a b -- ^ The hash trie
                    -> b        -- ^ The found value
-findWithDefault trie key def = case find trie key of
+findWithDefault key def trie = case find key trie of
                                  Just val -> val
                                  Nothing -> def
 
 (!) :: (Hashable a, Eq a, Show b) => Hamt a b -> a -> Maybe b
-(!) tn key = find tn key
+(!) tn key = find key tn 
 
 -- | Insert a value into the hash trie
 insert :: (Eq a, Hashable a) 
-          => Hamt a b -- ^ The hash trie to insert into
-          -> a        -- ^ The key to insert this under
+          => a        -- ^ The key to insert this under
           -> b        -- ^ The value to be inserted
+          -> Hamt a b -- ^ The hash trie to insert into
           -> Hamt a b -- ^ The resulting hash trie
-insert tn key value = {-# SCC "Insert" #-} insertWithMask tn key (fromIntegral $ hash key) value 1
+insert key value tn = {-# SCC "Insert" #-} insertWithMask tn key (fromIntegral $ hash key) value 1
 
 insertPair :: (Eq a, Hashable a) => Hamt a b -> (a, b) -> Hamt a b
-insertPair tn (key, value) = insert tn key value
+insertPair tn (key, value) = insert key value tn 
 
-insertPairs :: (Eq a, Hashable a) => Hamt a b -> [(a, b)] -> Hamt a b
-insertPairs tn pairs = foldl insertPair tn pairs
+insertPairs :: (Eq a, Hashable a) => [(a, b)] -> Hamt a b-> Hamt a b
+insertPairs pairs tn = foldl insertPair tn pairs 
+
+deleteWithMask :: (Eq a, Hashable a) => Hamt a b -> a -> Word -> Int -> Hamt a b
+deleteWithMask Empty _ _ _ = Empty
+deleteWithMask (KeyValue key value) delkey _ _ = if delkey == key then
+                                       Empty
+                                   else
+                                       KeyValue key value
+deleteWithMask (KeyValueBucket subkey pairs) delkey _ _ = 
+    -- Perhaps a minor issue, but if this leaves the KeyValueBucket empty, we're
+    -- still leaving the KeyValueBucket here instead of returning Empty.
+    KeyValueBucket subkey (filter (\(key, value) -> key /= delkey) pairs)
+deleteWithMask (TrieMap arr) delkey hash bitseries =
+    let subkey = getSubkey hash bitseries in
+    TrieMap (arr // [(subkey, deleteWithMask ((Data.Array.!) arr subkey) delkey hash (bitseries+1))]) 
+
+
+
+delete :: (Eq a, Hashable a) => a -> Hamt a b -> Hamt a b
+delete key tn = deleteWithMask tn key (fromIntegral $ hash key) 1
 
 -- | Create a hash trie, built from an association list.
 hamt :: (Eq a, Hashable a) => [(a, b)] -> Hamt a b
 hamt [] = Empty
-hamt pairs = insertPairs Empty pairs
+hamt pairs = insertPairs pairs Empty 
