@@ -12,7 +12,7 @@ Description:  An implementation of Bagwell's Hash Array Mapped Trie for Haskell
 
 
 Library
-    Build-Depends:      base>=4, base < 5, hashable, array, diffarray
+    Build-Depends:      base>=4, base < 5, hashable, array
     Exposed-modules:
         Data.Hamt
     Other-modules:
