@@ -5,7 +5,8 @@ module Data.Hamt (empty,
                   (Data.Hamt.!),
                   Hamt(..), 
                   findWithDefault, 
-                  delete) where
+                  delete,
+                  wordHash) where
 import Data.Hamt.Array
 import Data.Hamt.Bits
 import Data.Hamt.List
@@ -15,9 +16,50 @@ import Data.Array
 import Data.Hashable
 import Data.Word 
 
+
+-- | Find a value in the hash trie
+find :: (Hashable a, Eq a) 
+        => a        -- ^ The key
+        -> Hamt a b -- ^ The hash trie to search
+        -> Maybe b  -- ^ The value (if it exists)
+find key tn = {-# SCC "Find" #-} findWithMask tn key (fromIntegral $ hash key) 1 
+
+-- | Find a value in the hash trie returning a given default if it is not found.
+findWithDefault :: (Hashable a, Eq a) 
+                   => a        -- ^ The key to search for
+                   -> b        -- ^ The default value
+                   -> Hamt a b -- ^ The hash trie
+                   -> b        -- ^ The found value
+findWithDefault key def trie = case find key trie of
+                                 Just val -> val
+                                 Nothing -> def
+
+(!) :: (Hashable a, Eq a, Show b) => Hamt a b -> a -> Maybe b
+(!) tn key = find key tn 
+
+-- | Insert a value into the hash trie
+insert :: (Eq a, Hashable a) 
+          => a        -- ^ The key to insert this under
+          -> b        -- ^ The value to be inserted
+          -> Hamt a b -- ^ The hash trie to insert into
+          -> Hamt a b -- ^ The resulting hash trie
+insert key value tn = {-# SCC "Insert" #-} insertWithMask tn key (fromIntegral $ hash key) value 1
+
+-- | Delete a key from the hash trie.  Returns the same trie if the key does
+-- does not exist.
+delete :: (Eq a, Hashable a) => a -> Hamt a b -> Hamt a b
+delete key tn = deleteWithMask tn key (fromIntegral $ hash key) 1
+
+-- | Create a hash trie, built from an association list.
+hamt :: (Eq a, Hashable a) => [(a, b)] -> Hamt a b
+hamt [] = Empty
+hamt pairs = insertPairs pairs Empty 
+
+-- | An empty hash trie.
 empty :: Hamt a b
 empty = Empty
 
+-- | The default hash function.  Essentially 'Data.Hashable.hash' that returns Words.
 wordHash :: Hashable a => a -> Word
 wordHash key = fromIntegral $ hash key
 
@@ -67,34 +109,6 @@ findWithMask (TrieMap arr) key hashvalue bitseries =
 findWithMask (KeyValueBucket _ assoclist) key hashvalue bitseries =
     {-# SCC "FindOnKeyValueBucket" #-} lookup key assoclist
 
--- | Find a value in the hash trie
-find :: (Hashable a, Eq a) 
-        => a        -- ^ The key
-        -> Hamt a b -- ^ The hash trie to search
-        -> Maybe b  -- ^ The value (if it exists)
-find key tn = {-# SCC "Find" #-} findWithMask tn key (fromIntegral $ hash key) 1 
-
--- | Find a value in the hash trie returning a given default if it is not found.
-findWithDefault :: (Hashable a, Eq a) 
-                   => a        -- ^ The key to search for
-                   -> b        -- ^ The default value
-                   -> Hamt a b -- ^ The hash trie
-                   -> b        -- ^ The found value
-findWithDefault key def trie = case find key trie of
-                                 Just val -> val
-                                 Nothing -> def
-
-(!) :: (Hashable a, Eq a, Show b) => Hamt a b -> a -> Maybe b
-(!) tn key = find key tn 
-
--- | Insert a value into the hash trie
-insert :: (Eq a, Hashable a) 
-          => a        -- ^ The key to insert this under
-          -> b        -- ^ The value to be inserted
-          -> Hamt a b -- ^ The hash trie to insert into
-          -> Hamt a b -- ^ The resulting hash trie
-insert key value tn = {-# SCC "Insert" #-} insertWithMask tn key (fromIntegral $ hash key) value 1
-
 insertPair :: (Eq a, Hashable a) => Hamt a b -> (a, b) -> Hamt a b
 insertPair tn (key, value) = insert key value tn 
 
@@ -119,10 +133,3 @@ deleteWithMask (TrieMap arr) delkey hash bitseries =
 
 
 
-delete :: (Eq a, Hashable a) => a -> Hamt a b -> Hamt a b
-delete key tn = deleteWithMask tn key (fromIntegral $ hash key) 1
-
--- | Create a hash trie, built from an association list.
-hamt :: (Eq a, Hashable a) => [(a, b)] -> Hamt a b
-hamt [] = Empty
-hamt pairs = insertPairs pairs Empty 
