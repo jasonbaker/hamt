@@ -16,4 +16,4 @@ Library
     Exposed-modules:
         Data.Hamt
     Other-modules:
-        Data.Hamt.Types, Data.Hamt.Bits, Data.Hamt.Array, Data.Hamt.Debug, Data.Hamt.List
+        Data.Hamt.Types, Data.Hamt.Bits, Data.Hamt.Array, Data.Hamt.List, Data.Hamt.KeyInfo
